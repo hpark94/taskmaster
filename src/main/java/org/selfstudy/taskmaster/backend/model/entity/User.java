@@ -12,7 +12,9 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"passwordHash"})
+@ToString(exclude = {
+    "passwordHash"
+})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class User {
     @Id
@@ -40,6 +42,7 @@ public class User {
 
     @PreUpdate
     protected void onUpdate() {
+
         lastModified = LocalDateTime.now();
     }
 }

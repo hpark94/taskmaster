@@ -1,6 +1,5 @@
 package org.selfstudy.taskmaster.backend.config;
 
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -16,25 +15,30 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
+
+        return http.csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(
+                auth -> auth.requestMatchers("/api/auth/**")
+                    .permitAll()
+                    .requestMatchers("/h2-console/**")
+                    .permitAll()
+                    .requestMatchers("/api/admin/**")
+                    .hasRole("ADMIN")
+                    .anyRequest()
+                    .authenticated()
             )
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            .sessionManagement(
+                session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            .headers(headers -> headers
-                .frameOptions(frameOptions -> frameOptions.sameOrigin())
+            .headers(
+                headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin())
             )
             .build();
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
+
         return new Argon2PasswordEncoder(16, 32, 1, 4096, 3);
     }
 }
