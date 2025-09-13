@@ -2,7 +2,7 @@ services:
   db:
     image: mariadb:11.4
     container_name: taskmaster-db
-    restart: always
+    restart: no
     environment:
       MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
       MYSQL_DATABASE: taskmaster
@@ -15,9 +15,44 @@ services:
     secrets:
       - db_root_password
       - db_user_password
+    networks:
+      - taskmaster-network
+
+  backend:
+    build:
+      context: ./backend/
+      dockerfile: Dockerfile.dev
+    container_name: taskmaster-app
+    restart: no
+    ports:
+      - "8080:8080"
+      - "5005:5005"
+    volumes:
+      - "./backend/src:/app/src"
+      - "./backend/pom.xml:/app/pom.xml"
+      - "./backend/target:/app/target"
+      - "maven-cache:/root/.m2"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    depends_on:
+      - db
+    secrets:
+      - db_user_password
+      - admin_password
+    networks:
+      - taskmaster-network
 
 secrets:
   db_root_password:
     file: ./secrets/db_root_password.txt
   db_user_password:
     file: ./secrets/db_user_password.txt
+  admin_password:
+    file: ./secrets/admin_password.txt
+
+volumes:
+  maven-cache: {}
+
+networks:
+  taskmaster-network:
+    driver: bridge
