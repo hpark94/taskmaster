@@ -4,17 +4,14 @@ services:
     container_name: taskmaster-db
     restart: no
     environment:
-      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MYSQL_ROOT_PASSWORD:
       MYSQL_DATABASE: taskmaster
       MYSQL_USER: taskmaster_user
-      MYSQL_PASSWORD_FILE: /run/secrets/db_user_password
+      MYSQL_PASSWORD:
     ports:
       - "3306:3306"
     volumes:
       - "./db_data:/var/lib/mysql"
-    secrets:
-      - db_root_password
-      - db_user_password
     networks:
       - taskmaster-network
 
@@ -22,7 +19,7 @@ services:
     build:
       context: ./backend/
       dockerfile: Dockerfile.dev
-    container_name: taskmaster-app
+    container_name: taskmaster-backend
     restart: no
     ports:
       - "8080:8080"
@@ -34,21 +31,15 @@ services:
       - "maven-cache:/root/.m2"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
+      - ADMIN_PASSWORD
+      - MYSQL_PASSWORD
+      - DB_NAME=taskmaster
+      - DB_USER=taskmaster_user
+      - DB_PORT=3306
     depends_on:
       - db
-    secrets:
-      - db_user_password
-      - admin_password
     networks:
       - taskmaster-network
-
-secrets:
-  db_root_password:
-    file: ./secrets/db_root_password.txt
-  db_user_password:
-    file: ./secrets/db_user_password.txt
-  admin_password:
-    file: ./secrets/admin_password.txt
 
 volumes:
   maven-cache: {}
