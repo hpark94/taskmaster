@@ -1,0 +1,44 @@
+# BUILD
+target/
+build/
+
+# IDE Files
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Database
+db_data/
+
+# Logs
+*.log
+
+# Documentation
+README.md
+HELP.md
+
+# Docker Files
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Secrets
+secrets/
+.env
+
+# Maven Wrapper Jar
+.mvn/wrapper/maven-wrapper.jar
+
+# Test Output
+!**/src/main/**/target/
+!**/src/test/**/target/
