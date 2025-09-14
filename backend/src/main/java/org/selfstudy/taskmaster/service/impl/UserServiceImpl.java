@@ -41,7 +41,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public User createUser(CreateUserRequest request) {
         if (userRepo.existsByEmail(request.getEmail())) {
-            throw new UserAlreadyExistsException("User already exists: " + request.getEmail());
+            throw new UserAlreadyExistsException(
+                "User already exists: " + request.getEmail()
+            );
         }
 
         String passwordHash = passwordEncoder.encode(request.getPassword());
@@ -59,7 +61,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public void deactivateUser(Long userId) {
         User user = userRepo.findById(userId)
-            .orElseThrow(() -> new UserNotFoundException("User not found."));
+            .orElseThrow(
+                () -> new UserNotFoundException("User not found: " + userId)
+            );
         user.setIsActive(false);
         userRepo.save(user);
     }
