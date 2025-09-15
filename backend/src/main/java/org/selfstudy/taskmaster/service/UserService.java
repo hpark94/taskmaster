@@ -1,11 +1,11 @@
 package org.selfstudy.taskmaster.service;
 
-import org.selfstudy.taskmaster.model.dto.request.CreateUserRequest;
-import org.selfstudy.taskmaster.model.entity.User;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import org.selfstudy.taskmaster.model.dto.request.CreateUserRequest;
+import org.selfstudy.taskmaster.model.entity.User;
 
 public interface UserService {
 

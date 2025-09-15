@@ -1,9 +1,9 @@
 package org.selfstudy.taskmaster.model.dto.response;
 
+import java.time.LocalDateTime;
+
 import lombok.Builder;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 @Data
 @Builder
