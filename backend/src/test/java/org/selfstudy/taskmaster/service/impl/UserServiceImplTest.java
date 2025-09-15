@@ -31,16 +31,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class UserServiceImplTest {
 
     @Mock
-    private UserRepository userRepo;
+    private UserRepository userRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UserServiceImpl userService;
-
-    private User testUser;
-    private CreateUserRequest createUserRequest;
 
     private static final Long TEST_USER_ID = 1L;
     private static final String TEST_USER_EMAIL = "testUser@example.com";
@@ -49,6 +46,9 @@ public class UserServiceImplTest {
 
     private static final String CREATE_USER_REQUEST_EMAIL = "newUser@example.com";
     private static final String CREATE_USER_REQUEST_PASSWORD = "plainPassword";
+
+    private User testUser;
+    private CreateUserRequest createUserRequest;
 
     @BeforeEach
     void setup() {
@@ -67,50 +67,50 @@ public class UserServiceImplTest {
 
     @Test
     void testFindUserById_ShouldReturnUser_WhenUserExists() {
-        when(userRepo.findById(TEST_USER_ID))
+        when(userRepository.findById(TEST_USER_ID))
             .thenReturn(Optional.of(testUser));
 
         Optional<User> result = userService.findUserById(TEST_USER_ID);
 
         assertTrue(result.isPresent());
         assertEquals(testUser, result.get());
-        verify(userRepo).findById(TEST_USER_ID);
+        verify(userRepository).findById(TEST_USER_ID);
 
     }
 
     @Test
     void testFindUserById_ShouldReturnEmpty_WhenUserDoesNotExist() {
-        when(userRepo.findById(TEST_USER_ID))
+        when(userRepository.findById(TEST_USER_ID))
             .thenReturn(Optional.empty());
 
         Optional<User> result = userService.findUserById(TEST_USER_ID);
 
         assertTrue(result.isEmpty());
-        verify(userRepo).findById(TEST_USER_ID);
+        verify(userRepository).findById(TEST_USER_ID);
     }
 
     @Test
     void testFindUserByEmail_ShouldReturnUser_WhenUserExists() {
-        when(userRepo.findByEmail(TEST_USER_EMAIL))
+        when(userRepository.findByEmail(TEST_USER_EMAIL))
             .thenReturn(Optional.of(testUser));
 
         Optional<User> result = userService.findUserByEmail(TEST_USER_EMAIL);
 
         assertTrue(result.isPresent());
         assertEquals(testUser, result.get());
-        verify(userRepo).findByEmail(TEST_USER_EMAIL);
+        verify(userRepository).findByEmail(TEST_USER_EMAIL);
     }
 
     @Test
     void testFindUserByEmail_ShouldReturnEmpty_WhenUserDoesNotExist() {
-        when(userRepo.findByEmail(TEST_USER_EMAIL))
+        when(userRepository.findByEmail(TEST_USER_EMAIL))
             .thenReturn(Optional.of(testUser));
 
         Optional<User> result = userService.findUserByEmail(TEST_USER_EMAIL);
 
         assertTrue(result.isPresent());
         assertEquals(testUser, result.get());
-        verify(userRepo).findByEmail(TEST_USER_EMAIL);
+        verify(userRepository).findByEmail(TEST_USER_EMAIL);
     }
 
     @Test
@@ -124,20 +124,20 @@ public class UserServiceImplTest {
             .passwordHash(TEST_USER_2_HASH)
             .build();
         List<User> users = Arrays.asList(testUser, testUser2);
-        when(userRepo.findAll()).thenReturn(users);
+        when(userRepository.findAll()).thenReturn(users);
 
         List<User> result = userService.findAllUsers();
 
         assertEquals(2, result.size());
         assertEquals(users, result);
-        verify(userRepo).findAll();
+        verify(userRepository).findAll();
     }
 
     @Test
     void testCreateUser_ShouldCreateUser_WhenEmailDoesNotExist() {
         final String PASSWORD_HASH = "newUserHash";
 
-        when(userRepo.existsByEmail(createUserRequest.getEmail()))
+        when(userRepository.existsByEmail(createUserRequest.getEmail()))
             .thenReturn(false);
         when(passwordEncoder.encode(createUserRequest.getPassword()))
             .thenReturn(PASSWORD_HASH);
@@ -146,7 +146,7 @@ public class UserServiceImplTest {
             .email(createUserRequest.getEmail())
             .passwordHash(PASSWORD_HASH)
             .build();
-        when(userRepo.save(any(User.class))).thenReturn(expectedUser);
+        when(userRepository.save(any(User.class))).thenReturn(expectedUser);
 
         User result = userService.createUser(createUserRequest);
 
@@ -155,9 +155,9 @@ public class UserServiceImplTest {
         assertEquals(PASSWORD_HASH, result.getPasswordHash());
         assertEquals(expectedUser, result);
 
-        verify(userRepo).existsByEmail(createUserRequest.getEmail());
+        verify(userRepository).existsByEmail(createUserRequest.getEmail());
         verify(passwordEncoder).encode(createUserRequest.getPassword());
-        verify(userRepo).save(any(User.class));
+        verify(userRepository).save(any(User.class));
 
     }
 
@@ -165,21 +165,21 @@ public class UserServiceImplTest {
     void testDeactivateUser_ShouldDeactivateUser_WhenUserExists() {
         final Long USER_ID = TEST_USER_ID;
 
-        when(userRepo.findById(USER_ID)).thenReturn(Optional.of(testUser));
-        when(userRepo.save(testUser)).thenReturn(testUser);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(testUser)).thenReturn(testUser);
 
         userService.deactivateUser(USER_ID);
 
         assertFalse(testUser.getIsActive());
-        verify(userRepo).findById(USER_ID);
-        verify(userRepo).save(testUser);
+        verify(userRepository).findById(USER_ID);
+        verify(userRepository).save(testUser);
     }
 
     @Test
     void testDeactivateUser_ShouldThrowException_WhenUserDoesNotExist() {
         final Long USER_ID = TEST_USER_ID;
 
-        when(userRepo.findById(USER_ID)).thenReturn(Optional.empty());
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
         UserNotFoundException exception = assertThrows(
             UserNotFoundException.class,
@@ -187,15 +187,15 @@ public class UserServiceImplTest {
         );
 
         assertEquals("User not found: " + USER_ID, exception.getMessage());
-        verify(userRepo).findById(USER_ID);
-        verify(userRepo, never()).save(any(User.class));
+        verify(userRepository).findById(USER_ID);
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
     void testFindActiveUsers_ShouldReturnActiveUsers() {
         testUser.setIsActive(true);
         List<User> activeUsers = Arrays.asList(testUser);
-        when(userRepo.findByIsActiveTrue()).thenReturn(activeUsers);
+        when(userRepository.findByIsActiveTrue()).thenReturn(activeUsers);
 
         List<User> result = userService.findActiveUsers();
 
@@ -204,7 +204,7 @@ public class UserServiceImplTest {
             result.get(0)
                 .getIsActive()
         );
-        verify(userRepo).findByIsActiveTrue();
+        verify(userRepository).findByIsActiveTrue();
     }
 
     @Test
@@ -212,35 +212,35 @@ public class UserServiceImplTest {
         LocalDateTime since = LocalDateTime.now()
             .minusDays(7L);
         List<User> recentUsers = Arrays.asList(testUser);
-        when(userRepo.findRecentUsers(since)).thenReturn(recentUsers);
+        when(userRepository.findRecentUsers(since)).thenReturn(recentUsers);
 
         List<User> result = userService.findRecentUsers(since);
 
         assertEquals(1, result.size());
         assertEquals(testUser, result.get(0));
 
-        verify(userRepo).findRecentUsers(since);
+        verify(userRepository).findRecentUsers(since);
     }
 
     @Test
     void testIsEmailTaken_ShouldReturnTrue_WhenEmailExists() {
-        final String email = "existing@example.com";
-        when(userRepo.existsByEmail(email)).thenReturn(true);
+        final String EMAIL = "existing@example.com";
+        when(userRepository.existsByEmail(EMAIL)).thenReturn(true);
 
-        boolean result = userService.isEmailTaken(email);
+        boolean result = userService.isEmailTaken(EMAIL);
 
         assertTrue(result);
-        verify(userRepo).existsByEmail(email);
+        verify(userRepository).existsByEmail(EMAIL);
     }
 
     @Test
     void testIsEmailTaken_ShouldReturnFalse_WhenEmailDoesNotExist() {
-        final String email = "existing@example.com";
-        when(userRepo.existsByEmail(email)).thenReturn(false);
+        final String EMAIL = "existing@example.com";
+        when(userRepository.existsByEmail(EMAIL)).thenReturn(false);
 
-        boolean result = userService.isEmailTaken(email);
+        boolean result = userService.isEmailTaken(EMAIL);
 
         assertFalse(result);
-        verify(userRepo).existsByEmail(email);
+        verify(userRepository).existsByEmail(EMAIL);
     }
 }
