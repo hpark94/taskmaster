@@ -2,15 +2,17 @@ package org.selfstudy.taskmaster.model.dto.response;
 
 import java.time.LocalDateTime;
 
-import lombok.Builder;
-import lombok.Data;
+import org.selfstudy.taskmaster.model.enums.UserStatus;
 
-@Data
-@Builder
-public class UserResponse {
-    private Long id;
-    private String email;
-    private Boolean isActive;
-    private LocalDateTime createdAt;
-    private LocalDateTime lastModified;
-}
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+
+public record UserResponse(
+
+    Long id,
+    String email,
+    UserStatus status,
+    LocalDateTime createdAt,
+    LocalDateTime lastModified
+
+) {};

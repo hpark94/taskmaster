@@ -8,78 +8,90 @@ import org.selfstudy.taskmaster.exception.UserAlreadyExistsException;
 import org.selfstudy.taskmaster.exception.UserNotFoundException;
 import org.selfstudy.taskmaster.model.dto.request.CreateUserRequest;
 import org.selfstudy.taskmaster.model.entity.User;
+import org.selfstudy.taskmaster.model.enums.UserStatus;
+import org.selfstudy.taskmaster.model.factory.UserFactory;
 import org.selfstudy.taskmaster.repository.UserRepository;
 import org.selfstudy.taskmaster.service.UserService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import lombok.RequiredArgsConstructor;
-
 @Service
-@Transactional
-@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
-    private final UserRepository userRepo;
-    private final PasswordEncoder passwordEncoder;
+
+    private final UserRepository userRepository;
+    private final UserFactory userFactory;
+
+    public UserServiceImpl(
+        UserRepository userRepository,
+        UserFactory userFactory
+    ) {
+        this.userRepository = userRepository;
+        this.userFactory    = userFactory;
+    }
 
     @Override
     public Optional<User> findUserById(Long id) {
-        return userRepo.findById(id);
+        return userRepository.findById(id);
     }
 
     @Override
     public Optional<User> findUserByEmail(String email) {
-        return userRepo.findByEmail(email);
+        return userRepository.findByEmail(email);
     }
 
     @Override
     public List<User> findAllUsers() {
-        return userRepo.findAll();
+        return userRepository.findAll();
     }
 
     @Override
-    public User createUser(CreateUserRequest request) {
-        if (userRepo.existsByEmail(request.getEmail())) {
-            throw new UserAlreadyExistsException(
-                "User already exists: " + request.getEmail()
-            );
-        }
-
-        String passwordHash = passwordEncoder.encode(request.getPassword());
-
-        final User savedUser = userRepo.save(
-            User.builder()
-                .email(request.getEmail())
-                .passwordHash(passwordHash)
-                .build()
-        );
-
-        return savedUser;
-    }
-
-    @Override
-    public void deactivateUser(Long userId) {
-        User user = userRepo.findById(userId)
-            .orElseThrow(
-                () -> new UserNotFoundException("User not found: " + userId)
-            );
-        user.setIsActive(false);
-        userRepo.save(user);
-    }
-
-    @Override
-    public List<User> findActiveUsers() {
-        return userRepo.findByIsActiveTrue();
+    public List<User> findUsersByStatus(UserStatus status) {
+        return userRepository.findByUserStatus(status);
     }
 
     @Override
     public List<User> findRecentUsers(LocalDateTime since) {
-        return userRepo.findRecentUsers(since);
+        return userRepository.findByCreatedAtAfter(since);
+    }
+
+    @Override
+    public List<User> findRecentUsersByStatus(LocalDateTime since, UserStatus status) {
+        return userRepository.findByCreatedAtAfterAndUserStatus(since, status);
+    }
+
+    @Override
+    public List<User> findUsersByMultipleStatus(List<UserStatus> status) {
+        return userRepository.findByUserStatusIn(status);
     }
 
     @Override
     public boolean isEmailTaken(String email) {
-        return userRepo.existsByEmail(email);
+        return userRepository.existsByEmail(email);
     }
+
+    @Override
+    @Transactional
+    public User createUser(CreateUserRequest request) {
+        if (userRepository.existsByEmail(request.email())) {
+            throw new UserAlreadyExistsException(
+                "User already exists with Email: " + request.email()
+            );
+        }
+
+        return userRepository.save(
+            userFactory.createFromDto(request)
+        );
+    }
+
+    @Override
+    public void updateUserStatus(Long id, UserStatus status) {
+        User user = userRepository.findById(id)
+            .orElseThrow(
+                () -> new UserNotFoundException("User not found with ID: " + id)
+            );
+        user.setStatus(status);
+        userRepository.save(user);
+    }
+
 }
