@@ -47,7 +47,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> findUsersByStatus(UserStatus status) {
-        return userRepository.findByUserStatus(status);
+        return userRepository.findByStatus(status);
     }
 
     @Override
@@ -57,12 +57,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> findRecentUsersByStatus(LocalDateTime since, UserStatus status) {
-        return userRepository.findByCreatedAtAfterAndUserStatus(since, status);
+        return userRepository.findByCreatedAtAfterAndStatus(since, status);
     }
 
     @Override
     public List<User> findUsersByMultipleStatus(List<UserStatus> status) {
-        return userRepository.findByUserStatusIn(status);
+        return userRepository.findByStatusIn(status);
     }
 
     @Override

@@ -18,19 +18,19 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findAll();
 
-    List<User> findByUserStatus(UserStatus status);
+    List<User> findByStatus(UserStatus status);
 
-    List<User> findByUserStatusIn(List<UserStatus> status);
+    List<User> findByStatusIn(List<UserStatus> status);
 
     List<User> findByCreatedAtAfter(LocalDateTime date);
 
-    List<User> findByCreatedAtAfterAndUserStatus(
+    List<User> findByCreatedAtAfterAndStatus(
         LocalDateTime date,
         UserStatus status
     );
 
     boolean existsByEmail(String email);
 
-    long countByUserStatus(UserStatus status);
+    long countByStatus(UserStatus status);
 
 }

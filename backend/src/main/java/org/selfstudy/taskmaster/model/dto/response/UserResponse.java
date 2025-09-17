@@ -4,9 +4,6 @@ import java.time.LocalDateTime;
 
 import org.selfstudy.taskmaster.model.enums.UserStatus;
 
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-
 public record UserResponse(
 
     Long id,
@@ -15,4 +12,4 @@ public record UserResponse(
     LocalDateTime createdAt,
     LocalDateTime lastModified
 
-) {};
+) {}
