@@ -7,8 +7,10 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest
 @ActiveProfiles("test")
 class TaskmasterApplicationTests {
+
     @Test
     void contextLoads() {
 
     }
+
 }

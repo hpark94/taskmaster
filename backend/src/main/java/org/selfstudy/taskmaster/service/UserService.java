@@ -29,4 +29,5 @@ public interface UserService {
     User createUser(CreateUserRequest request);
 
     void updateUserStatus(Long userId, UserStatus status);
+
 }
