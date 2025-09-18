@@ -8,9 +8,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import java.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.selfstudy.taskmaster.model.entity.User;
+import org.selfstudy.taskmaster.model.enums.UserStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
@@ -24,96 +26,179 @@ public class UserRepositoryTest {
     @Autowired
     private UserRepository userRepository;
 
-    private static final String TEST_USER_EMAIL = "testUser@example.com";
-    private static final String TEST_USER_PASSWORD_HASH = "testUserHash";
-    private static final Boolean TEST_USER_IS_ACTIVE = true;
+    private static final String ACTIVE_TEST_USER_EMAIL
+        = "testUser@example.com";
+    private static final String ACTIVE_TEST_USER_PASSWORD_HASH
+        = "testUserPasswordHash";
+    private static final UserStatus ACTIVE_TEST_USER_STATUS
+        = UserStatus.ACTIVE;
+
+    private static final String INACTIVE_TEST_USER_EMAIL
+        = "inactiveTestUser@example.com";
+    private static final String INACTIVE_TEST_USER_PASSWORD_HASH
+        = "inactiveTestUserPasswordHash";
+    private static final UserStatus INACTIVE_TEST_USER_STATUS
+        = UserStatus.INACTIVE;
 
     private static final String NON_EXIST_EMAIL = "nonexisting@example.com";
 
     private User activeTestUser;
+    private User inactiveTestUser;
 
     @BeforeEach
     void setup() {
-        activeTestUser = User.builder()
-            .email(TEST_USER_EMAIL)
-            .passwordHash(TEST_USER_PASSWORD_HASH)
-            .isActive(TEST_USER_IS_ACTIVE)
-            .build();
+
+        activeTestUser = new User();
+        activeTestUser.setId(null);
+        activeTestUser.setEmail(ACTIVE_TEST_USER_EMAIL);
+        activeTestUser.setPasswordHash(ACTIVE_TEST_USER_PASSWORD_HASH);
+        activeTestUser.setCreatedAt(LocalDateTime.now());
+        activeTestUser.setLastModified(null);
+        activeTestUser.setStatus(ACTIVE_TEST_USER_STATUS);
+
+        inactiveTestUser = new User();
+        inactiveTestUser.setId(null);
+        inactiveTestUser.setEmail(INACTIVE_TEST_USER_EMAIL);
+        inactiveTestUser.setPasswordHash(INACTIVE_TEST_USER_PASSWORD_HASH);
+        inactiveTestUser.setCreatedAt(LocalDateTime.now());
+        inactiveTestUser.setLastModified(null);
+        inactiveTestUser.setStatus(INACTIVE_TEST_USER_STATUS);
+
     }
 
     @Test
-    void testfindByEmail_ShouldReturnUser_WhenEmailExists() {
+    void testFindByIdShouldReturnUserWhenIdExists() {
         entityManager.persistAndFlush(activeTestUser);
+        final long userId = activeTestUser.getId();
 
-        Optional<User> found = userRepository.findByEmail(TEST_USER_EMAIL);
+        final Optional<User> result = userRepository.findById(userId);
 
-        assertTrue(found.isPresent());
+        assertTrue(result.isPresent());
         assertEquals(
-            TEST_USER_EMAIL,
-            found.get()
+            ACTIVE_TEST_USER_EMAIL,
+            result.get()
                 .getEmail()
         );
     }
 
     @Test
-    void testfindByEmail_ShouldReturnEmpty_WhenEmailDoesNotExist() {
+    void testFindByIdShouldReturnEmptyWhenIdDoesNotExist() {
         entityManager.persistAndFlush(activeTestUser);
+        final long userId = activeTestUser.getId() + 1L;
 
-        Optional<User> found = userRepository.findByEmail(NON_EXIST_EMAIL);
+        final Optional<User> result = userRepository.findById(userId);
 
-        assertTrue(found.isEmpty());
+        assertTrue(result.isEmpty());
     }
 
     @Test
-    void testExistsByEmail_ShouldReturnTrue_WhenEmailExists() {
+    void testFindByEmailShouldReturnUserWhenEmailExists() {
         entityManager.persistAndFlush(activeTestUser);
 
-        boolean result = userRepository.existsByEmail(TEST_USER_EMAIL);
+        final Optional<User> result = userRepository.findByEmail(ACTIVE_TEST_USER_EMAIL);
+
+        assertTrue(result.isPresent());
+        assertEquals(
+            ACTIVE_TEST_USER_EMAIL,
+            result.get()
+                .getEmail()
+        );
+    }
+
+    @Test
+    void testFindByEmailShouldReturnEmptyWhenEmailDoesNotExist() {
+        entityManager.persistAndFlush(activeTestUser);
+
+        final Optional<User> result = userRepository.findByEmail(NON_EXIST_EMAIL);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testExistsByEmailShouldReturnTrueWhenEmailExists() {
+        entityManager.persistAndFlush(activeTestUser);
+
+        final boolean result = userRepository.existsByEmail(ACTIVE_TEST_USER_EMAIL);
 
         assertTrue(result);
     }
 
     @Test
-    void testExistsByEmail_ShouldReturnFalse_WhenEmailDoesNotExist() {
+    void testExistsByEmailShouldReturnFalseWhenEmailDoesNotExist() {
         entityManager.persistAndFlush(activeTestUser);
 
-        boolean result = userRepository.existsByEmail(NON_EXIST_EMAIL);
+        final boolean result = userRepository.existsByEmail(NON_EXIST_EMAIL);
 
         assertFalse(result);
     }
 
-    void testfindRecentUsers_ShouldReturnRecentUsers() {
-        LocalDateTime since = LocalDateTime.now()
-            .minusDays(7L);
-        entityManager.persistFlushFind(activeTestUser);
+    @Test
+    void testFindByStatusShouldReturnUsersWhenStatusExists() {
+        entityManager.persistAndFlush(activeTestUser);
+        entityManager.persistAndFlush(activeTestUser);
 
-        List<User> recentUsers = userRepository.findRecentUsers(since);
+        final List<User> usersWithStatus
+            = userRepository.findByStatus(ACTIVE_TEST_USER_STATUS);
 
-        assertEquals(1, recentUsers.size());
+        assertEquals(1, usersWithStatus.size());
+        assertEquals(activeTestUser, usersWithStatus.get(0));
     }
 
-    void testfindByIsActiveTrue_ShouldReturnOnlyActiveUsers() {
-        final String INACTIVE_EMAIL = "inactive@example.com";
-        final String INACTIVE_PASSWORD_HASH = "inactiveHash";
-        final boolean INACTIVE_STATUS = false;
-
-        User inactiveUser = User.builder()
-            .email(INACTIVE_EMAIL)
-            .passwordHash(INACTIVE_PASSWORD_HASH)
-            .isActive(INACTIVE_STATUS)
-            .build();
-
+    @Test
+    void testFindByStatusInShouldReturnUsersWhenStatusesExist() {
         entityManager.persistAndFlush(activeTestUser);
-        entityManager.persistAndFlush(inactiveUser);
+        entityManager.persistAndFlush(inactiveTestUser);
 
-        List<User> recentUsers = userRepository.findByIsActiveTrue();
+        final List<User> result
+            = userRepository.findByStatusIn(
+                Arrays.asList(ACTIVE_TEST_USER_STATUS, INACTIVE_TEST_USER_STATUS)
+            );
 
-        assertEquals(1, recentUsers.size());
+        assertEquals(2, result.size());
         assertEquals(
-            TEST_USER_EMAIL,
-            recentUsers.get(0)
-                .getEmail()
+            Arrays.asList(activeTestUser, inactiveTestUser),
+            result
         );
+    }
+
+    @Test
+    void testFindByCreatedAtAfterShouldReturnUsersRecentlyCreated() {
+        final LocalDateTime since = LocalDateTime.now()
+            .minusDays(7L);
+        entityManager.persistFlushFind(activeTestUser);
+        entityManager.persistFlushFind(inactiveTestUser);
+
+        final List<User> result = userRepository.findByCreatedAtAfter(since);
+
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    void testFindByCreatedAtAfterAndStatusShouldReturnUsersRecentlyCreatedWithStatus() {
+        final LocalDateTime since = LocalDateTime.now()
+            .minusDays(7L);
+        entityManager.persistFlushFind(activeTestUser);
+        entityManager.persistFlushFind(inactiveTestUser);
+
+        final List<User> result = userRepository.findByCreatedAtAfterAndStatus(
+            since,
+            ACTIVE_TEST_USER_STATUS
+        );
+
+        assertEquals(1, result.size());
+        assertEquals(activeTestUser, result.get(0));
+    }
+
+    @Test
+    void testCountByStatusShouldReturnCountOfUsersWithStatus() {
+        entityManager.persistFlushFind(activeTestUser);
+        entityManager.persistFlushFind(inactiveTestUser);
+
+        final long result = userRepository.countByStatus(
+            ACTIVE_TEST_USER_STATUS
+        );
+
+        assertEquals(1, result);
     }
 
 }

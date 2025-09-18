@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -21,11 +20,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.selfstudy.taskmaster.exception.UserAlreadyExistsException;
 import org.selfstudy.taskmaster.exception.UserNotFoundException;
 import org.selfstudy.taskmaster.model.dto.request.CreateUserRequest;
 import org.selfstudy.taskmaster.model.entity.User;
+import org.selfstudy.taskmaster.model.enums.UserStatus;
+import org.selfstudy.taskmaster.model.factory.UserFactory;
 import org.selfstudy.taskmaster.repository.UserRepository;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceImplTest {
@@ -34,213 +35,282 @@ public class UserServiceImplTest {
     private UserRepository userRepository;
 
     @Mock
-    private PasswordEncoder passwordEncoder;
+    private UserFactory userFactory;
 
     @InjectMocks
     private UserServiceImpl userService;
 
     private static final Long TEST_USER_ID = 1L;
     private static final String TEST_USER_EMAIL = "testUser@example.com";
-    private static final String TEST_USER_PASSWORD_HASH = "testUserHash";
-    private static final Boolean TEST_USER_IS_ACTIVE = true;
+    private static final String TEST_USER_PASSWORD = "testUserPassword";
+    private static final String TEST_USER_PASSWORD_HASH = "testUserPasswordHash";
+    private static final UserStatus TEST_USER_STATUS = UserStatus.ACTIVE;
 
-    private static final String CREATE_USER_REQUEST_EMAIL = "newUser@example.com";
-    private static final String CREATE_USER_REQUEST_PASSWORD = "plainPassword";
+    private static final long TEST_USER_2_ID = 2L;
+    private static final String TEST_USER_2_EMAIL = "testUser2@example.com";
+    private static final String TEST_USER_2_PASSWORD_HASH = "testUser2PasswordHash";
+    private static final UserStatus TEST_USER_2_STATUS = UserStatus.INACTIVE;
 
-    private User testUser;
-    private CreateUserRequest createUserRequest;
+    private static User testUser;
+    private static User testUser2;
+    private static CreateUserRequest createUserRequest;
 
     @BeforeEach
     void setup() {
-        testUser = User.builder()
-            .id(TEST_USER_ID)
-            .email(TEST_USER_EMAIL)
-            .passwordHash(TEST_USER_PASSWORD_HASH)
-            .isActive(TEST_USER_IS_ACTIVE)
-            .build();
 
-        createUserRequest = CreateUserRequest.builder()
-            .email(CREATE_USER_REQUEST_EMAIL)
-            .password(CREATE_USER_REQUEST_PASSWORD)
-            .build();
+        testUser = new User();
+        testUser.setId(TEST_USER_ID);
+        testUser.setEmail(TEST_USER_EMAIL);
+        testUser.setPasswordHash(TEST_USER_PASSWORD_HASH);
+        testUser.setCreatedAt(LocalDateTime.now());
+        testUser.setLastModified(null);
+        testUser.setStatus(TEST_USER_STATUS);
+
+        testUser2 = new User();
+        testUser2.setId(TEST_USER_2_ID);
+        testUser2.setEmail(TEST_USER_2_EMAIL);
+        testUser2.setPasswordHash(TEST_USER_2_PASSWORD_HASH);
+        testUser2.setCreatedAt(LocalDateTime.now());
+        testUser2.setLastModified(null);
+        testUser2.setStatus(TEST_USER_2_STATUS);
+
+        createUserRequest = new CreateUserRequest(
+            TEST_USER_EMAIL,
+            TEST_USER_PASSWORD
+        );
+
     }
 
     @Test
-    void testFindUserById_ShouldReturnUser_WhenUserExists() {
+    void testFindUserByIdShouldReturnUserWhenUserExists() {
         when(userRepository.findById(TEST_USER_ID))
             .thenReturn(Optional.of(testUser));
 
-        Optional<User> result = userService.findUserById(TEST_USER_ID);
+        final Optional<User> result = userService.findUserById(TEST_USER_ID);
 
         assertTrue(result.isPresent());
         assertEquals(testUser, result.get());
-        verify(userRepository).findById(TEST_USER_ID);
 
+        verify(userRepository).findById(TEST_USER_ID);
     }
 
     @Test
-    void testFindUserById_ShouldReturnEmpty_WhenUserDoesNotExist() {
+    void testFindUserByIdShouldReturnEmptyWhenUserDoesNotExist() {
         when(userRepository.findById(TEST_USER_ID))
             .thenReturn(Optional.empty());
 
-        Optional<User> result = userService.findUserById(TEST_USER_ID);
+        final Optional<User> result = userService.findUserById(TEST_USER_ID);
 
         assertTrue(result.isEmpty());
+
         verify(userRepository).findById(TEST_USER_ID);
     }
 
     @Test
-    void testFindUserByEmail_ShouldReturnUser_WhenUserExists() {
+    void testFindUserByEmailShouldReturnUserWhenUserExists() {
         when(userRepository.findByEmail(TEST_USER_EMAIL))
             .thenReturn(Optional.of(testUser));
 
-        Optional<User> result = userService.findUserByEmail(TEST_USER_EMAIL);
+        final Optional<User> result = userService.findUserByEmail(TEST_USER_EMAIL);
 
         assertTrue(result.isPresent());
         assertEquals(testUser, result.get());
+
         verify(userRepository).findByEmail(TEST_USER_EMAIL);
     }
 
     @Test
-    void testFindUserByEmail_ShouldReturnEmpty_WhenUserDoesNotExist() {
+    void testFindUserByEmailShouldReturnEmptyWhenUserDoesNotExist() {
         when(userRepository.findByEmail(TEST_USER_EMAIL))
             .thenReturn(Optional.of(testUser));
 
-        Optional<User> result = userService.findUserByEmail(TEST_USER_EMAIL);
+        final Optional<User> result = userService.findUserByEmail(TEST_USER_EMAIL);
 
         assertTrue(result.isPresent());
         assertEquals(testUser, result.get());
+
         verify(userRepository).findByEmail(TEST_USER_EMAIL);
     }
 
     @Test
-    void testFindAllUsers_ShouldReturnAllUsers() {
-        final String TEST_USER_2_EMAIL = "testUser2@example.com";
-        final String TEST_USER_2_HASH = "testUser2Hash";
+    void testFindAllUsersShouldReturnAllUsers() {
 
-        User testUser2 = User.builder()
-            .id(2L)
-            .email(TEST_USER_2_EMAIL)
-            .passwordHash(TEST_USER_2_HASH)
-            .build();
-        List<User> users = Arrays.asList(testUser, testUser2);
+        final List<User> users = Arrays.asList(testUser, testUser2);
+
         when(userRepository.findAll()).thenReturn(users);
 
-        List<User> result = userService.findAllUsers();
+        final List<User> result = userService.findAllUsers();
 
         assertEquals(2, result.size());
         assertEquals(users, result);
+
         verify(userRepository).findAll();
     }
 
     @Test
-    void testCreateUser_ShouldCreateUser_WhenEmailDoesNotExist() {
-        final String PASSWORD_HASH = "newUserHash";
-
-        when(userRepository.existsByEmail(createUserRequest.getEmail()))
+    void testCreateUserShouldCreateUserWhenEmailDoesNotExist() {
+        when(userRepository.existsByEmail(createUserRequest.email()))
             .thenReturn(false);
-        when(passwordEncoder.encode(createUserRequest.getPassword()))
-            .thenReturn(PASSWORD_HASH);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+        when(userFactory.createFromDto(createUserRequest))
+            .thenReturn(testUser);
 
-        User expectedUser = User.builder()
-            .email(createUserRequest.getEmail())
-            .passwordHash(PASSWORD_HASH)
-            .build();
-        when(userRepository.save(any(User.class))).thenReturn(expectedUser);
-
-        User result = userService.createUser(createUserRequest);
+        final User result = userService.createUser(createUserRequest);
 
         assertNotNull(result);
-        assertEquals(createUserRequest.getEmail(), result.getEmail());
-        assertEquals(PASSWORD_HASH, result.getPasswordHash());
-        assertEquals(expectedUser, result);
+        assertEquals(createUserRequest.email(), result.getEmail());
+        assertEquals(testUser, result);
 
-        verify(userRepository).existsByEmail(createUserRequest.getEmail());
-        verify(passwordEncoder).encode(createUserRequest.getPassword());
+        verify(userRepository).existsByEmail(createUserRequest.email());
         verify(userRepository).save(any(User.class));
-
+        verify(userFactory).createFromDto(createUserRequest);
     }
 
     @Test
-    void testDeactivateUser_ShouldDeactivateUser_WhenUserExists() {
-        final Long USER_ID = TEST_USER_ID;
+    void testCreateUserShouldThrowErrowWhenEmailExists() {
+        when(userRepository.existsByEmail(createUserRequest.email()))
+            .thenReturn(true);
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(testUser));
-        when(userRepository.save(testUser)).thenReturn(testUser);
+        UserAlreadyExistsException exception = assertThrows(
+            UserAlreadyExistsException.class,
+            () -> userService.createUser(createUserRequest)
+        );
 
-        userService.deactivateUser(USER_ID);
+        assertEquals(
+            "User already exists with Email: " + createUserRequest.email(),
+            exception.getMessage()
+        );
 
-        assertFalse(testUser.getIsActive());
-        verify(userRepository).findById(USER_ID);
-        verify(userRepository).save(testUser);
+        verify(userRepository).existsByEmail(createUserRequest.email());
     }
 
     @Test
-    void testDeactivateUser_ShouldThrowException_WhenUserDoesNotExist() {
-        final Long USER_ID = TEST_USER_ID;
+    void testUpdateUserStatusShouldUpdateStatusWhenUserExists() {
+        final UserStatus status = UserStatus.INACTIVE;
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
+        when(userRepository.findById(TEST_USER_ID))
+            .thenReturn(Optional.of(testUser));
+
+        userService.updateUserStatus(TEST_USER_ID, status);
+
+        assertEquals(status, testUser.getStatus());
+
+        verify(userRepository).findById(TEST_USER_ID);
+    }
+
+    @Test
+    void testUpdateUserStatusShouldThrowErrorWhenUserDoesNotExist() {
+        final Long userId = TEST_USER_ID;
+        final UserStatus status = UserStatus.INACTIVE;
 
         UserNotFoundException exception = assertThrows(
             UserNotFoundException.class,
-            () -> userService.deactivateUser(USER_ID)
+            () -> userService.updateUserStatus(userId, status)
         );
 
-        assertEquals("User not found: " + USER_ID, exception.getMessage());
-        verify(userRepository).findById(USER_ID);
-        verify(userRepository, never()).save(any(User.class));
+        assertEquals(
+            "User not found with ID: " + userId,
+            exception.getMessage()
+        );
+
+        verify(userRepository).findById(userId);
     }
 
     @Test
-    void testFindActiveUsers_ShouldReturnActiveUsers() {
-        testUser.setIsActive(true);
-        List<User> activeUsers = Arrays.asList(testUser);
-        when(userRepository.findByIsActiveTrue()).thenReturn(activeUsers);
-
-        List<User> result = userService.findActiveUsers();
-
-        assertEquals(1, result.size());
-        assertTrue(
-            result.get(0)
-                .getIsActive()
-        );
-        verify(userRepository).findByIsActiveTrue();
-    }
-
-    @Test
-    void testFindRecentUsers_ShouldReturnRecentUsers() {
-        LocalDateTime since = LocalDateTime.now()
+    void testFindRecentUsersShouldReturnRecentUsers() {
+        final LocalDateTime oneWeekAgo = LocalDateTime.now()
             .minusDays(7L);
-        List<User> recentUsers = Arrays.asList(testUser);
-        when(userRepository.findRecentUsers(since)).thenReturn(recentUsers);
+        final List<User> recentUsers = Arrays.asList(testUser);
 
-        List<User> result = userService.findRecentUsers(since);
+        when(userRepository.findByCreatedAtAfter(oneWeekAgo))
+            .thenReturn(recentUsers);
+
+        final List<User> result = userService.findRecentUsers(oneWeekAgo);
 
         assertEquals(1, result.size());
         assertEquals(testUser, result.get(0));
 
-        verify(userRepository).findRecentUsers(since);
+        verify(userRepository).findByCreatedAtAfter(oneWeekAgo);
     }
 
     @Test
-    void testIsEmailTaken_ShouldReturnTrue_WhenEmailExists() {
-        final String EMAIL = "existing@example.com";
-        when(userRepository.existsByEmail(EMAIL)).thenReturn(true);
+    void testIsEmailTakenShouldReturnTrueWhenEmailExists() {
+        final String email = "existing@example.com";
 
-        boolean result = userService.isEmailTaken(EMAIL);
+        when(userRepository.existsByEmail(email)).thenReturn(true);
+
+        final boolean result = userService.isEmailTaken(email);
 
         assertTrue(result);
-        verify(userRepository).existsByEmail(EMAIL);
+        verify(userRepository).existsByEmail(email);
     }
 
     @Test
-    void testIsEmailTaken_ShouldReturnFalse_WhenEmailDoesNotExist() {
-        final String EMAIL = "existing@example.com";
-        when(userRepository.existsByEmail(EMAIL)).thenReturn(false);
+    void testIsEmailTakenShouldReturnFalseWhenEmailDoesNotExist() {
+        final String email = "existing@example.com";
 
-        boolean result = userService.isEmailTaken(EMAIL);
+        when(userRepository.existsByEmail(email)).thenReturn(false);
+
+        final boolean result = userService.isEmailTaken(email);
 
         assertFalse(result);
-        verify(userRepository).existsByEmail(EMAIL);
+        verify(userRepository).existsByEmail(email);
     }
+
+    @Test
+    void testFindUsersByStatusShouldReturnUsersWithGivenStatus() {
+        final UserStatus queryStatus = UserStatus.ACTIVE;
+        final List<User> usersWithStatus = Arrays.asList(testUser);
+
+        when(userRepository.findByStatus(queryStatus))
+            .thenReturn(usersWithStatus);
+
+        final List<User> result = userService.findUsersByStatus(queryStatus);
+
+        assertEquals(1, result.size());
+        assertEquals(usersWithStatus, result);
+
+        verify(userRepository).findByStatus(queryStatus);
+    }
+
+    @Test
+    void testFindUsersByMultipleStatusReturnUsersWithGivenStatuses() {
+        final List<UserStatus> queryStatuses
+            = Arrays.asList(UserStatus.ACTIVE, UserStatus.INACTIVE);
+        final List<User> usersWithStatuses = Arrays.asList(testUser, testUser2);
+
+        when(userRepository.findByStatusIn(queryStatuses))
+            .thenReturn(usersWithStatuses);
+
+        final List<User> result
+            = userService.findUsersByMultipleStatus(queryStatuses);
+
+        assertEquals(2, result.size());
+        assertEquals(usersWithStatuses, result);
+
+        verify(userRepository).findByStatusIn(queryStatuses);
+    }
+
+    @Test
+    void testFindRecentUsersByStatus() {
+        final LocalDateTime oneWeekAgo = LocalDateTime.now()
+            .minusDays(7L);
+        final UserStatus queryStatus = UserStatus.ACTIVE;
+        final List<User> recentUsersWithStatus = Arrays.asList(testUser);
+
+        when(
+            userRepository
+                .findByCreatedAtAfterAndStatus(oneWeekAgo, queryStatus)
+        ).thenReturn(recentUsersWithStatus);
+
+        final List<User> result
+            = userService.findRecentUsersByStatus(oneWeekAgo, queryStatus);
+
+        assertEquals(1, result.size());
+        assertEquals(recentUsersWithStatus, result);
+
+        verify(userRepository)
+            .findByCreatedAtAfterAndStatus(oneWeekAgo, queryStatus);
+    }
+
 }
