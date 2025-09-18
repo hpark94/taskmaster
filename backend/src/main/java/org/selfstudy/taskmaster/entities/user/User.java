@@ -1,8 +1,10 @@
-package org.selfstudy.taskmaster.model.entity;
+package org.selfstudy.taskmaster.entities.user;
 
 import java.time.LocalDateTime;
 
-import org.selfstudy.taskmaster.model.enums.UserStatus;
+import org.selfstudy.taskmaster.entities.user.dto.UserCreateRequest;
+import org.selfstudy.taskmaster.entities.user.enums.UserStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -43,11 +45,10 @@ public class User {
         lastModified = LocalDateTime.now();
     }
 
-    public User() {
-        // Default constructor required by JPA
+    protected User() {
     }
 
-    public User(
+    protected User(
         Long id,
         String email,
         String passwordHash,
@@ -61,6 +62,35 @@ public class User {
         this.createdAt    = createdAt;
         this.lastModified = lastModified;
         this.status       = status;
+    }
+
+    public static User create(
+        String email,
+        String password,
+        PasswordEncoder passwordEncoder
+    ) {
+        return new User(
+            null,
+            email,
+            passwordEncoder.encode(password),
+            LocalDateTime.now(),
+            null,
+            UserStatus.ACTIVE
+        );
+    }
+
+    public static User createFromDto(
+        UserCreateRequest request,
+        PasswordEncoder passwordEncoder
+    ) {
+        return new User(
+            null,
+            request.email(),
+            passwordEncoder.encode(request.password()),
+            LocalDateTime.now(),
+            null,
+            UserStatus.ACTIVE
+        );
     }
 
     public Long getId() {
@@ -87,27 +117,15 @@ public class User {
         return status;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setEmail(String email) {
+    public void changeEmail(String email) {
         this.email = email;
     }
 
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
+    public void changePassword(String password, PasswordEncoder passwordEncoder) {
+        this.passwordHash = passwordEncoder.encode(password);
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public void setLastModified(LocalDateTime lastModified) {
-        this.lastModified = lastModified;
-    }
-
-    public void setStatus(UserStatus status) {
+    public void changeStatus(UserStatus status) {
         this.status = status;
     }
 

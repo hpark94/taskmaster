@@ -4,14 +4,16 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.selfstudy.taskmaster.entities.user.User;
+import org.selfstudy.taskmaster.entities.user.dto.UserChangePasswordRequest;
+import org.selfstudy.taskmaster.entities.user.dto.UserChangeStatusRequest;
+import org.selfstudy.taskmaster.entities.user.dto.UserCreateRequest;
+import org.selfstudy.taskmaster.entities.user.enums.UserStatus;
 import org.selfstudy.taskmaster.exception.UserAlreadyExistsException;
 import org.selfstudy.taskmaster.exception.UserNotFoundException;
-import org.selfstudy.taskmaster.model.dto.request.CreateUserRequest;
-import org.selfstudy.taskmaster.model.entity.User;
-import org.selfstudy.taskmaster.model.enums.UserStatus;
-import org.selfstudy.taskmaster.model.factory.UserFactory;
 import org.selfstudy.taskmaster.repository.UserRepository;
 import org.selfstudy.taskmaster.service.UserService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,14 +22,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final UserFactory userFactory;
+    private final PasswordEncoder passwordEncoder;
 
     public UserServiceImpl(
         UserRepository userRepository,
-        UserFactory userFactory
+        PasswordEncoder passwordEncoder
     ) {
-        this.userRepository = userRepository;
-        this.userFactory    = userFactory;
+        this.userRepository  = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -56,7 +58,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<User> findRecentUsersByStatus(LocalDateTime since, UserStatus status) {
+    public List<User> findRecentUsersByStatus(
+        LocalDateTime since,
+        UserStatus status
+    ) {
         return userRepository.findByCreatedAtAfterAndStatus(since, status);
     }
 
@@ -72,7 +77,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public User createUser(CreateUserRequest request) {
+    public User createUser(UserCreateRequest request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new UserAlreadyExistsException(
                 "User already exists with Email: " + request.email()
@@ -80,17 +85,33 @@ public class UserServiceImpl implements UserService {
         }
 
         return userRepository.save(
-            userFactory.createFromDto(request)
+            User.createFromDto(request, passwordEncoder)
         );
     }
 
     @Override
-    public void updateUserStatus(Long id, UserStatus status) {
-        User user = userRepository.findById(id)
+    @Transactional
+    public void changeUserPassword(UserChangePasswordRequest request) {
+        User user = userRepository.findById(request.id())
             .orElseThrow(
-                () -> new UserNotFoundException("User not found with ID: " + id)
+                () -> new UserNotFoundException(
+                    "User not found with ID: " + request.id()
+                )
             );
-        user.setStatus(status);
+        user.changePassword(request.password(), passwordEncoder);
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void changeUserStatus(UserChangeStatusRequest request) {
+        User user = userRepository.findById(request.id())
+            .orElseThrow(
+                () -> new UserNotFoundException(
+                    "User not found with ID: " + request.id()
+                )
+            );
+        user.changeStatus(request.status());
         userRepository.save(user);
     }
 

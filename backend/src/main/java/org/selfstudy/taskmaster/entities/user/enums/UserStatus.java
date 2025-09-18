@@ -1,4 +1,4 @@
-package org.selfstudy.taskmaster.model.enums;
+package org.selfstudy.taskmaster.entities.user.enums;
 
 public enum UserStatus {
 

@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import org.selfstudy.taskmaster.model.entity.User;
-import org.selfstudy.taskmaster.model.enums.UserStatus;
+import org.selfstudy.taskmaster.entities.user.User;
+import org.selfstudy.taskmaster.entities.user.enums.UserStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

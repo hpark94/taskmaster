@@ -4,9 +4,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import org.selfstudy.taskmaster.model.dto.request.CreateUserRequest;
-import org.selfstudy.taskmaster.model.entity.User;
-import org.selfstudy.taskmaster.model.enums.UserStatus;
+import org.selfstudy.taskmaster.entities.user.User;
+import org.selfstudy.taskmaster.entities.user.dto.UserChangePasswordRequest;
+import org.selfstudy.taskmaster.entities.user.dto.UserChangeStatusRequest;
+import org.selfstudy.taskmaster.entities.user.dto.UserCreateRequest;
+import org.selfstudy.taskmaster.entities.user.enums.UserStatus;
 
 public interface UserService {
 
@@ -26,8 +28,10 @@ public interface UserService {
 
     boolean isEmailTaken(String email);
 
-    User createUser(CreateUserRequest request);
+    User createUser(UserCreateRequest request);
 
-    void updateUserStatus(Long userId, UserStatus status);
+    void changeUserPassword(UserChangePasswordRequest request);
+
+    void changeUserStatus(UserChangeStatusRequest request);
 
 }

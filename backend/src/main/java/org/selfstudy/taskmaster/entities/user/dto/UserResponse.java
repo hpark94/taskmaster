@@ -1,8 +1,8 @@
-package org.selfstudy.taskmaster.model.dto.response;
+package org.selfstudy.taskmaster.entities.user.dto;
 
 import java.time.LocalDateTime;
 
-import org.selfstudy.taskmaster.model.enums.UserStatus;
+import org.selfstudy.taskmaster.entities.user.enums.UserStatus;
 
 public record UserResponse(
 
